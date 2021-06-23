@@ -1,0 +1,56 @@
+version: "3.7"
+services:
+  app:
+    build:
+      args:
+        user: svejegres
+        uid: 1000
+      context: ./
+      dockerfile: Dockerfile
+    image: laravel
+    container_name: actions-tracker-app
+    restart: unless-stopped
+    working_dir: /var/www/
+    volumes:
+      - ./:/var/www
+    networks:
+      - actions-tracker-network
+
+  database:
+    image: mysql
+    container_name: actions-tracker-database
+    restart: unless-stopped
+    ports:
+      - 3307:3306
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_USER: ${DB_USERNAME}
+      SERVICE_TAGS: dev
+      SERVICE_NAME: mysql
+    volumes:
+      - dbdata:/var/lib/mysql
+    networks:
+      - actions-tracker-network
+
+  web-server:
+    image: nginx
+    container_name: actions-tracker-web-server
+    restart: unless-stopped
+    ports:
+      - 8080:80
+      - 443:443
+    volumes:
+      - ./:/var/www
+      - ./nginx/conf.d:/etc/nginx/conf.d/
+    networks:
+      - actions-tracker-network
+
+networks:
+  actions-tracker-network:
+    driver: bridge
+
+volumes:
+  dbdata:
+    driver: local
